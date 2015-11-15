@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.8/d3.js" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.10.1/lodash.js"></script>
+<style>
+body {
+   margin: 1rem;
+}
+</style>
+</head>
+<body>
+<h3>DBSCAN</h3>
+<div><svg id="canvas"><svg></div>
+</body>
+<script>
+
+var w = 400;
+var h = 400;
+var vis;
+
+var dataPoints = [];
+var clusters = [];
+
+var numPoints = 100;
+var minimumSize = 4;
+var eps = 25.0;
+
+
+var colourScale = d3.scale.category20();
+
+
+initPoints();
+initCanvas();
+dbscan();
+
+console.log(clusters);
+markCluster();
+
+
+
+function markCluster() {
+   clusters.forEach(function(cluster, clusterIndex) {
+      cluster.forEach(function(p) {
+         p.clusterIndex = clusterIndex; 
+      });
+   })
+
+
+   var inCluster = vis.selectAll('.point').filter(function(d) {
+      return d.hasOwnProperty('clusterIndex');
+   });
+
+   inCluster.style('fill', function(d) {
+      return colourScale(d.clusterIndex);
+   });
+}
+
+
+function dbscan() {
+   dataPoints.forEach(function(p, i) {
+      if (p.isVisited === true) return;
+
+      p.isVisited = true;
+
+      var neighbours = _neighbours(p);
+
+      if (neighbours.length >= minimumSize) {
+         var newCluster = [];
+         expandCluster(p, neighbours, newCluster); 
+         clusters.push(newCluster);
+      }
+
+   });
+}
+
+function expandCluster(point, neighbours, c) {
+   c.push(point);
+   for (var i=0; i < neighbours.length; i++) {
+      var p = neighbours[i];
+      if (p.isVisited === false) {
+         p.isVisited = true;
+         var neighboursPrime = _neighbours(p);
+         if (neighboursPrime.length >= minimumSize) {
+            neighbours = neighbours.concat(neighboursPrime);
+         }
+      }
+      if (p.isClustered === false) {
+         p.isClustered = true;
+         c.push(p);
+      }
+   }
+}
+
+
+function _dist(p1, p2) {
+   return Math.sqrt( (p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y));
+}
+
+
+function _neighbours(point) {
+   var result = [];
+   dataPoints.forEach(function(p) {
+      if (_dist(p, point) < eps) {
+         result.push(p);
+      }
+   })
+   return result;
+}
+
+
+function initPoints() {
+   var padding = 10;
+
+   for (var i=0; i < numPoints; i++) {
+      dataPoints.push({
+         id: i,
+         x: padding + Math.random()* (w - 2*padding),
+         y: padding + Math.random()* (h - 2*padding),
+         isVisited: false,
+         isClustered: false
+      });
+   }
+}
+
+
+function initCanvas() {
+   vis = d3.select('#canvas').attr('width', w).attr('height', h).append('g');
+   vis.append('rect').attr('width', w).attr('height', h).style('fill', '#EEE');
+
+   vis.selectAll('.point')
+     .data(dataPoints)
+     .enter()
+     .append('circle')
+     .classed('point', true)
+     .attr({
+        cx: function(d) { return d.x; },
+        cy: function(d) { return d.y; },
+        r: 5
+     })
+     .style({
+        opacity: 0.6,
+        fill: '#DDD',
+        stroke: '#AAA'
+     });
+
+}
+
+</script>
+</html>
