@@ -22,8 +22,8 @@ var vis;
 var dataPoints = [];
 var clusters = [];
 
-var numPoints = 100;
-var minimumSize = 4;
+var numPoints = 600;
+var minimumSize = 9;
 var eps = 25.0;
 
 
@@ -51,9 +51,11 @@ function markCluster() {
       return d.hasOwnProperty('clusterIndex');
    });
 
-   inCluster.style('fill', function(d) {
+   inCluster.transition().duration(1500)
+     .style('fill', function(d) {
       return colourScale(d.clusterIndex);
-   });
+     })
+     .style('opacity', 0.8);
 }
 
 
@@ -139,7 +141,7 @@ function initCanvas() {
         r: 5
      })
      .style({
-        opacity: 0.6,
+        opacity: 0.7,
         fill: '#DDD',
         stroke: '#AAA'
      });
