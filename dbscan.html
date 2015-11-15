@@ -11,7 +11,18 @@ body {
 </head>
 <body>
 <h3>DBSCAN</h3>
-<div><svg id="canvas"><svg></div>
+
+<div style="float:left"><svg id="canvas"><svg></div>
+<div style="float:right;width:60%">
+   <div>
+      Select minimum cluster size: <span id="sizeLabel">4</span><br>
+      <input id="sizeSlider" type="range" min="2" max="25" value="4" oninput="updateInput()"/>
+   </div>
+   <div>
+      Select minimum distance: <span id="distLabel">20</span><br>
+      <input id="distSlider" type="range" min="5" max="50" value="20" oninput="updateInput()"/>
+   </div>
+</div>
 </body>
 <script>
 
@@ -22,15 +33,16 @@ var vis;
 var dataPoints = [];
 var clusters = [];
 
-var numPoints = 600;
-var minimumSize = 9;
-var eps = 25.0;
+var numPoints = 400;
+var minimumSize = 4;
+var eps = 20.0;
 
 
 var colourScale = d3.scale.category20();
 
 
 initPoints();
+updateInput();
 initCanvas();
 dbscan();
 
@@ -38,20 +50,50 @@ console.log(clusters);
 markCluster();
 
 
+function updateInput() {
+   if (! vis) return; // Not ready yet
+
+   var dist = +d3.select('#distSlider').node().value;
+   var size = +d3.select('#sizeSlider').node().value;
+
+   d3.select('#distLabel').text(dist);
+   d3.select('#sizeLabel').text(size);
+
+   console.log('dist = ' +  dist, ' size = ' + size);
+   eps = dist;
+   minimumSize = size;
+   resetData();
+   dbscan();
+   markCluster();
+}
+
+function resetData() {
+   clusters = [];
+
+   d3.selectAll('.point').style('fill', '#DDD')
+   dataPoints.forEach(function(p) {
+      p.isVisited = false;
+      p.isClustered = false;
+      delete p['clusterIndex'];
+   });
+}
+
+
+
 
 function markCluster() {
    clusters.forEach(function(cluster, clusterIndex) {
       cluster.forEach(function(p) {
-         p.clusterIndex = clusterIndex; 
+         p.clusterIndex = clusterIndex;
       });
-   })
+   });
 
 
    var inCluster = vis.selectAll('.point').filter(function(d) {
       return d.hasOwnProperty('clusterIndex');
    });
 
-   inCluster.transition().duration(1500)
+   inCluster.transition().duration(500)
      .style('fill', function(d) {
       return colourScale(d.clusterIndex);
      })
@@ -69,7 +111,7 @@ function dbscan() {
 
       if (neighbours.length >= minimumSize) {
          var newCluster = [];
-         expandCluster(p, neighbours, newCluster); 
+         expandCluster(p, neighbours, newCluster);
          clusters.push(newCluster);
       }
 
