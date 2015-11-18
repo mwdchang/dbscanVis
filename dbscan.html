@@ -6,6 +6,11 @@
 <style>
 body {
    margin: 1rem;
+   font-family: Tahoma;
+   font-size: 0.85rem;
+}
+div {
+   margin: 0.5rem;
 }
 </style>
 </head>
@@ -13,7 +18,7 @@ body {
 <h3>DBSCAN</h3>
 
 <div style="float:left"><svg id="canvas"><svg></div>
-<div style="float:right;width:60%">
+<div style="float:left;width:60%">
    <div>
       Select minimum cluster size: <span id="sizeLabel">4</span><br>
       <input id="sizeSlider" type="range" min="2" max="25" value="4" oninput="updateInput()"/>
@@ -21,6 +26,9 @@ body {
    <div>
       Select minimum distance: <span id="distLabel">20</span><br>
       <input id="distSlider" type="range" min="5" max="50" value="20" oninput="updateInput()"/>
+      <div>
+         <svg id="summary"></svg>
+      </div>
    </div>
 </div>
 </body>
@@ -79,8 +87,6 @@ function resetData() {
 }
 
 
-
-
 function markCluster() {
    clusters.forEach(function(cluster, clusterIndex) {
       cluster.forEach(function(p) {
@@ -93,11 +99,43 @@ function markCluster() {
       return d.hasOwnProperty('clusterIndex');
    });
 
-   inCluster.transition().duration(500)
+   inCluster.transition().duration(100)
      .style('fill', function(d) {
       return colourScale(d.clusterIndex);
      })
      .style('opacity', 0.8);
+
+   // Draw them summary bars
+
+   d3.select('#summary').selectAll('*').remove();
+
+   var summary = d3.select('#summary').attr('height', 400)
+     .append('g').attr('transform', 'translate(0, 10)');
+
+   summary.append('rect')
+     .attr('x', 2)
+     .attr('y', 0)
+     .attr('height', clusters.length * 9 + 10)
+     .attr('width', 2)
+     .style('fill', '#aaa');
+
+   var bars = summary.selectAll('.bar')
+     .data(clusters)
+     .enter()
+     .append('rect')
+     .classed('bar', true)
+     .attr('x', 5)
+     .attr('y', function(d, i) { return 3 + i*9; })
+     .attr('width', 1)
+     .attr('height', 8)
+     .style('fill', function(d, i) {
+        return colourScale(i);
+     });
+   bars.transition().duration(100).attr('width', function(d) { return d.length; });
+
+
+
+
 }
 
 
